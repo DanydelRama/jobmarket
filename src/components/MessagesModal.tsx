@@ -14,25 +14,62 @@ interface MessagesModalProps {
   userId: string;
 }
 
+const mockMessages = {
+  accepted: [
+    {
+      id: '1',
+      jobTitle: 'Senior Full Stack Developer',
+      company: 'TechMorocco Solutions',
+      message: 'Congratulations! We are pleased to inform you that your application has been accepted. We would like to schedule an interview with you.',
+      interviewDate: '2024-02-15',
+      interviewTime: '10:00 AM',
+      location: 'Online - Zoom Meeting',
+      confirmed: false
+    },
+    {
+      id: '2',
+      jobTitle: 'Digital Marketing Manager',
+      company: 'Maroc Digital Agency',
+      message: 'Great news! Your profile impressed our team. We would like to schedule an interview to discuss this opportunity further.',
+      interviewDate: '2024-02-18',
+      interviewTime: '2:00 PM',
+      location: 'Rabat Office - Building A, Floor 3',
+      confirmed: false
+    }
+  ],
+  rejected: [
+    {
+      id: '3',
+      jobTitle: 'Financial Analyst',
+      company: 'Casablanca Finance Group',
+      message: 'Thank you for your interest in our Financial Analyst position. After careful consideration, we have decided to proceed with other candidates whose experience more closely matches our current needs.'
+    },
+    {
+      id: '4',
+      jobTitle: 'UX/UI Designer',
+      company: 'Creative Studio Maroc',
+      message: 'We appreciate the time you took to apply for our UX/UI Designer role. While your portfolio shows talent, we have selected a candidate with more specific experience in mobile app design.'
+    },
+    {
+      id: '5',
+      jobTitle: 'Agricultural Engineer',
+      company: 'AgriTech Morocco',
+      message: 'Thank you for applying to our Agricultural Engineer position. We were impressed by your qualifications, however, we have chosen to move forward with a candidate who has more hands-on experience with precision agriculture technologies.'
+    },
+    {
+      id: '6',
+      jobTitle: 'Project Manager',
+      company: 'Atlas Construction',
+      message: 'We thank you for your application for the Project Manager role. After reviewing all applications, we have decided to proceed with candidates who have more experience in large-scale infrastructure projects.'
+    }
+  ]
+};
+
 const MessagesModal = ({ open, onOpenChange, userId }: MessagesModalProps) => {
   const [selectedTab, setSelectedTab] = useState('accepted');
-  const [acceptedMessages, setAcceptedMessages] = useState<any[]>([]);
-  const [rejectedMessages, setRejectedMessages] = useState<any[]>([]);
+  const [acceptedMessages, setAcceptedMessages] = useState(mockMessages.accepted);
+  const [rejectedMessages, setRejectedMessages] = useState(mockMessages.rejected);
   const { toast } = useToast();
-
-  useEffect(() => {
-    if (open) {
-      // Load messages from localStorage
-      const candidateMessages = JSON.parse(localStorage.getItem('candidateMessages') || '[]');
-      
-      // Filter messages by status
-      const accepted = candidateMessages.filter((msg: any) => msg.status === 'accepted');
-      const rejected = candidateMessages.filter((msg: any) => msg.status === 'rejected');
-      
-      setAcceptedMessages(accepted);
-      setRejectedMessages(rejected);
-    }
-  }, [open]);
 
   const handleConfirmInterview = (messageId: string) => {
     const updatedMessages = acceptedMessages.map(msg => 
@@ -42,18 +79,9 @@ const MessagesModal = ({ open, onOpenChange, userId }: MessagesModalProps) => {
     );
     setAcceptedMessages(updatedMessages);
     
-    // Update localStorage
-    const allMessages = JSON.parse(localStorage.getItem('candidateMessages') || '[]');
-    const updatedAllMessages = allMessages.map((msg: any) => 
-      msg.id === messageId 
-        ? { ...msg, confirmed: true }
-        : msg
-    );
-    localStorage.setItem('candidateMessages', JSON.stringify(updatedAllMessages));
-    
     toast({
       title: "Interview Confirmed",
-      description: "Your interview has been confirmed successfully.",
+      description: "Your interview has been confirmed successfully. Reminder set!",
     });
   };
 
@@ -73,26 +101,25 @@ const MessagesModal = ({ open, onOpenChange, userId }: MessagesModalProps) => {
         description: `You have ${upcomingInterviews.length} interview(s) coming up soon!`,
         duration: 5000,
       });
+    } else {
+      toast({
+        title: "No Upcoming Interviews",
+        description: "You don't have any interviews scheduled for today or tomorrow.",
+      });
     }
   };
 
-  useEffect(() => {
-    if (acceptedMessages.length > 0) {
-      checkUpcomingInterviews();
-    }
-  }, [acceptedMessages]);
-
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-3xl max-h-[80vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-3xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <div className="flex items-center justify-between">
-            <DialogTitle className="text-2xl font-bold">Messages</DialogTitle>
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <DialogTitle className="text-xl sm:text-2xl font-bold">Messages</DialogTitle>
             <Button 
               variant="outline" 
               size="sm" 
               onClick={checkUpcomingInterviews}
-              className="flex items-center space-x-2"
+              className="flex items-center space-x-2 w-full sm:w-auto"
             >
               <Bell className="h-4 w-4" />
               <span>Check Reminders</span>
@@ -102,12 +129,12 @@ const MessagesModal = ({ open, onOpenChange, userId }: MessagesModalProps) => {
 
         <Tabs value={selectedTab} onValueChange={setSelectedTab}>
           <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="accepted" className="flex items-center space-x-2">
-              <CheckCircle className="h-4 w-4" />
+            <TabsTrigger value="accepted" className="flex items-center space-x-1 sm:space-x-2 text-xs sm:text-sm">
+              <CheckCircle className="h-3 w-3 sm:h-4 sm:w-4" />
               <span>Accepted ({acceptedMessages.length})</span>
             </TabsTrigger>
-            <TabsTrigger value="rejected" className="flex items-center space-x-2">
-              <XCircle className="h-4 w-4" />
+            <TabsTrigger value="rejected" className="flex items-center space-x-1 sm:space-x-2 text-xs sm:text-sm">
+              <XCircle className="h-3 w-3 sm:h-4 sm:w-4" />
               <span>Rejected ({rejectedMessages.length})</span>
             </TabsTrigger>
           </TabsList>
@@ -122,19 +149,19 @@ const MessagesModal = ({ open, onOpenChange, userId }: MessagesModalProps) => {
               acceptedMessages.map((message) => (
                 <Card key={message.id} className="border-l-4 border-l-green-500">
                   <CardHeader>
-                    <div className="flex items-start justify-between">
-                      <div>
-                        <CardTitle className="text-lg text-green-700">
+                    <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
+                      <div className="flex-1">
+                        <CardTitle className="text-base sm:text-lg text-green-700">
                           {message.jobTitle}
                         </CardTitle>
-                        <p className="text-gray-600">{message.company}</p>
+                        <p className="text-gray-600 text-sm sm:text-base">{message.company}</p>
                       </div>
                       <div className="flex flex-col space-y-2">
-                        <Badge variant="outline" className="text-green-700 border-green-700">
+                        <Badge variant="outline" className="text-green-700 border-green-700 text-xs">
                           Interview Scheduled
                         </Badge>
                         {message.confirmed && (
-                          <Badge variant="default" className="bg-green-600">
+                          <Badge variant="default" className="bg-green-600 text-xs">
                             Confirmed
                           </Badge>
                         )}
@@ -142,22 +169,22 @@ const MessagesModal = ({ open, onOpenChange, userId }: MessagesModalProps) => {
                     </div>
                   </CardHeader>
                   <CardContent className="space-y-4">
-                    <p className="text-gray-700">{message.message}</p>
+                    <p className="text-gray-700 text-sm sm:text-base">{message.message}</p>
                     
-                    <div className="bg-green-50 p-4 rounded-lg space-y-2">
-                      <h4 className="font-semibold text-green-800">Interview Details</h4>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                    <div className="bg-green-50 p-3 sm:p-4 rounded-lg space-y-2">
+                      <h4 className="font-semibold text-green-800 text-sm sm:text-base">Interview Details</h4>
+                      <div className="grid grid-cols-1 gap-3 text-xs sm:text-sm">
                         <div className="flex items-center space-x-2">
-                          <Calendar className="h-4 w-4 text-green-600" />
+                          <Calendar className="h-3 w-3 sm:h-4 sm:w-4 text-green-600 flex-shrink-0" />
                           <span>{new Date(message.interviewDate).toLocaleDateString()}</span>
                         </div>
                         <div className="flex items-center space-x-2">
-                          <Clock className="h-4 w-4 text-green-600" />
+                          <Clock className="h-3 w-3 sm:h-4 sm:w-4 text-green-600 flex-shrink-0" />
                           <span>{message.interviewTime}</span>
                         </div>
-                        <div className="flex items-center space-x-2 md:col-span-2">
-                          <MapPin className="h-4 w-4 text-green-600" />
-                          <span>{message.location}</span>
+                        <div className="flex items-start space-x-2">
+                          <MapPin className="h-3 w-3 sm:h-4 sm:w-4 text-green-600 flex-shrink-0 mt-0.5" />
+                          <span className="break-words">{message.location}</span>
                         </div>
                       </div>
                     </div>
@@ -165,14 +192,14 @@ const MessagesModal = ({ open, onOpenChange, userId }: MessagesModalProps) => {
                     {!message.confirmed && (
                       <Button 
                         onClick={() => handleConfirmInterview(message.id)}
-                        className="w-full gradient-bg"
+                        className="w-full gradient-bg text-sm sm:text-base"
                       >
                         Confirm Interview
                       </Button>
                     )}
 
                     {message.confirmed && (
-                      <div className="text-center text-green-700 font-medium">
+                      <div className="text-center text-green-700 font-medium text-sm sm:text-base">
                         ✓ Interview Confirmed
                       </div>
                     )}
@@ -192,20 +219,20 @@ const MessagesModal = ({ open, onOpenChange, userId }: MessagesModalProps) => {
               rejectedMessages.map((message) => (
                 <Card key={message.id} className="border-l-4 border-l-red-500">
                   <CardHeader>
-                    <div className="flex items-start justify-between">
-                      <div>
-                        <CardTitle className="text-lg text-red-700">
+                    <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
+                      <div className="flex-1">
+                        <CardTitle className="text-base sm:text-lg text-red-700">
                           {message.jobTitle}
                         </CardTitle>
-                        <p className="text-gray-600">{message.company}</p>
+                        <p className="text-gray-600 text-sm sm:text-base">{message.company}</p>
                       </div>
-                      <Badge variant="outline" className="text-red-700 border-red-700">
+                      <Badge variant="outline" className="text-red-700 border-red-700 text-xs self-start">
                         Not Selected
                       </Badge>
                     </div>
                   </CardHeader>
                   <CardContent>
-                    <p className="text-gray-700">{message.message}</p>
+                    <p className="text-gray-700 text-sm sm:text-base leading-relaxed">{message.message}</p>
                   </CardContent>
                 </Card>
               ))
@@ -214,7 +241,7 @@ const MessagesModal = ({ open, onOpenChange, userId }: MessagesModalProps) => {
         </Tabs>
 
         <div className="flex justify-end pt-4 border-t">
-          <Button onClick={() => onOpenChange(false)}>
+          <Button onClick={() => onOpenChange(false)} className="w-full sm:w-auto">
             Close
           </Button>
         </div>

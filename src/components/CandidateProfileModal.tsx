@@ -17,35 +17,35 @@ const CandidateProfileModal = ({ open, onOpenChange, candidate }: CandidateProfi
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-4xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-4xl max-h-[95vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="text-2xl font-bold">Candidate Profile</DialogTitle>
+          <DialogTitle className="text-xl sm:text-2xl font-bold">Candidate Profile</DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-6">
+        <div className="space-y-4 sm:space-y-6">
           {/* Basic Info */}
           <Card>
             <CardHeader>
-              <div className="flex items-center space-x-4">
-                <Avatar className="h-20 w-20">
+              <div className="flex flex-col sm:flex-row sm:items-center space-y-4 sm:space-y-0 sm:space-x-4">
+                <Avatar className="h-16 w-16 sm:h-20 sm:w-20 mx-auto sm:mx-0">
                   <AvatarImage src={candidate.profilePhoto} alt={candidate.fullName} />
-                  <AvatarFallback className="bg-primary/10 text-primary text-xl font-semibold">
+                  <AvatarFallback className="bg-primary/10 text-primary text-lg sm:text-xl font-semibold">
                     {candidate.fullName.charAt(0)}
                   </AvatarFallback>
                 </Avatar>
-                <div>
-                  <h3 className="text-2xl font-bold">{candidate.fullName}</h3>
-                  <div className="space-y-1 text-gray-600">
-                    <div className="flex items-center space-x-2">
-                      <Mail className="h-4 w-4" />
-                      <span>{candidate.email}</span>
+                <div className="text-center sm:text-left flex-1">
+                  <h3 className="text-xl sm:text-2xl font-bold mb-2">{candidate.fullName}</h3>
+                  <div className="space-y-1 text-gray-600 text-sm sm:text-base">
+                    <div className="flex items-center justify-center sm:justify-start space-x-2">
+                      <Mail className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
+                      <span className="break-all">{candidate.email}</span>
                     </div>
-                    <div className="flex items-center space-x-2">
-                      <Phone className="h-4 w-4" />
+                    <div className="flex items-center justify-center sm:justify-start space-x-2">
+                      <Phone className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
                       <span>{candidate.phone}</span>
                     </div>
-                    <div className="flex items-center space-x-2">
-                      <MapPin className="h-4 w-4" />
+                    <div className="flex items-center justify-center sm:justify-start space-x-2">
+                      <MapPin className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
                       <span>{candidate.location}</span>
                     </div>
                   </div>
@@ -54,8 +54,8 @@ const CandidateProfileModal = ({ open, onOpenChange, candidate }: CandidateProfi
             </CardHeader>
             <CardContent>
               <div>
-                <h4 className="font-semibold mb-2">Professional Summary</h4>
-                <p className="text-gray-700">{candidate.professionalSummary}</p>
+                <h4 className="font-semibold mb-2 text-sm sm:text-base">Professional Summary</h4>
+                <p className="text-gray-700 text-sm sm:text-base leading-relaxed">{candidate.professionalSummary}</p>
               </div>
             </CardContent>
           </Card>
@@ -63,16 +63,19 @@ const CandidateProfileModal = ({ open, onOpenChange, candidate }: CandidateProfi
           {/* Skills */}
           <Card>
             <CardHeader>
-              <CardTitle className="flex items-center space-x-2">
-                <Star className="h-5 w-5" />
+              <CardTitle className="flex items-center space-x-2 text-base sm:text-lg">
+                <Star className="h-4 w-4 sm:h-5 sm:w-5" />
                 <span>Skills</span>
               </CardTitle>
             </CardHeader>
             <CardContent>
               <div className="flex flex-wrap gap-2">
-                {candidate.skills.map((skill: string) => (
-                  <Badge key={skill} variant="secondary">
-                    {skill}
+                {(candidate.skills || []).map((skill: any, index: number) => (
+                  <Badge key={index} variant="secondary" className="text-xs sm:text-sm">
+                    {skill.name || skill}
+                    {skill.rating && (
+                      <span className="ml-1 text-xs">({skill.rating}/5)</span>
+                    )}
                   </Badge>
                 ))}
               </div>
@@ -82,14 +85,14 @@ const CandidateProfileModal = ({ open, onOpenChange, candidate }: CandidateProfi
           {/* Languages */}
           <Card>
             <CardHeader>
-              <CardTitle>Languages</CardTitle>
+              <CardTitle className="text-base sm:text-lg">Languages</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="space-y-2">
-                {candidate.languages.map((lang: any, index: number) => (
-                  <div key={index} className="flex justify-between items-center">
-                    <span className="font-medium">{lang.name}</span>
-                    <Badge variant="outline">{lang.proficiency}</Badge>
+                {(candidate.languages || []).map((lang: any, index: number) => (
+                  <div key={index} className="flex justify-between items-center py-1">
+                    <span className="font-medium text-sm sm:text-base">{lang.name}</span>
+                    <Badge variant="outline" className="text-xs">{lang.proficiency}</Badge>
                   </div>
                 ))}
               </div>
@@ -99,20 +102,20 @@ const CandidateProfileModal = ({ open, onOpenChange, candidate }: CandidateProfi
           {/* Education */}
           <Card>
             <CardHeader>
-              <CardTitle className="flex items-center space-x-2">
-                <GraduationCap className="h-5 w-5" />
+              <CardTitle className="flex items-center space-x-2 text-base sm:text-lg">
+                <GraduationCap className="h-4 w-4 sm:h-5 sm:w-5" />
                 <span>Education</span>
               </CardTitle>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {candidate.education.map((edu: any, index: number) => (
-                  <div key={index} className="border-l-2 border-primary pl-4">
-                    <h4 className="font-semibold">{edu.degree}</h4>
-                    <p className="text-gray-600">{edu.school}</p>
-                    <p className="text-sm text-gray-500">{edu.startDate} - {edu.endDate}</p>
+                {(candidate.education || []).map((edu: any, index: number) => (
+                  <div key={index} className="border-l-2 border-primary pl-3 sm:pl-4">
+                    <h4 className="font-semibold text-sm sm:text-base">{edu.degree}</h4>
+                    <p className="text-gray-600 text-sm sm:text-base">{edu.school}</p>
+                    <p className="text-xs sm:text-sm text-gray-500">{edu.startDate} - {edu.endDate}</p>
                     {edu.description && (
-                      <p className="text-sm text-gray-700 mt-1">{edu.description}</p>
+                      <p className="text-xs sm:text-sm text-gray-700 mt-1">{edu.description}</p>
                     )}
                   </div>
                 ))}
@@ -123,20 +126,22 @@ const CandidateProfileModal = ({ open, onOpenChange, candidate }: CandidateProfi
           {/* Experience */}
           <Card>
             <CardHeader>
-              <CardTitle className="flex items-center space-x-2">
-                <Briefcase className="h-5 w-5" />
+              <CardTitle className="flex items-center space-x-2 text-base sm:text-lg">
+                <Briefcase className="h-4 w-4 sm:h-5 sm:w-5" />
                 <span>Work Experience</span>
               </CardTitle>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {candidate.experience.map((exp: any, index: number) => (
-                  <div key={index} className="border-l-2 border-primary pl-4">
-                    <h4 className="font-semibold">{exp.title}</h4>
-                    <p className="text-gray-600">{exp.company}</p>
-                    <p className="text-sm text-gray-500">{exp.startDate} - {exp.endDate}</p>
-                    {exp.description && (
-                      <p className="text-sm text-gray-700 mt-1">{exp.description}</p>
+                {(candidate.workExperience || candidate.experience || []).map((exp: any, index: number) => (
+                  <div key={index} className="border-l-2 border-primary pl-3 sm:pl-4">
+                    <h4 className="font-semibold text-sm sm:text-base">{exp.title || exp.jobTitle}</h4>
+                    <p className="text-gray-600 text-sm sm:text-base">{exp.company}</p>
+                    <p className="text-xs sm:text-sm text-gray-500">{exp.startDate} - {exp.endDate}</p>
+                    {(exp.description || exp.responsibilities) && (
+                      <p className="text-xs sm:text-sm text-gray-700 mt-1 leading-relaxed">
+                        {exp.description || exp.responsibilities}
+                      </p>
                     )}
                   </div>
                 ))}
@@ -148,20 +153,20 @@ const CandidateProfileModal = ({ open, onOpenChange, candidate }: CandidateProfi
           {candidate.certifications && candidate.certifications.length > 0 && (
             <Card>
               <CardHeader>
-                <CardTitle className="flex items-center space-x-2">
-                  <Award className="h-5 w-5" />
+                <CardTitle className="flex items-center space-x-2 text-base sm:text-lg">
+                  <Award className="h-4 w-4 sm:h-5 sm:w-5" />
                   <span>Certifications & Awards</span>
                 </CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="space-y-3">
                   {candidate.certifications.map((cert: any, index: number) => (
-                    <div key={index} className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+                    <div key={index} className="flex flex-col sm:flex-row sm:justify-between sm:items-center p-3 bg-gray-50 rounded-lg space-y-2 sm:space-y-0">
                       <div>
-                        <h4 className="font-semibold">{cert.title}</h4>
-                        <p className="text-gray-600">{cert.organization}</p>
+                        <h4 className="font-semibold text-sm sm:text-base">{cert.title}</h4>
+                        <p className="text-gray-600 text-xs sm:text-sm">{cert.organization || cert.issuingOrg}</p>
                       </div>
-                      <Badge variant="outline">{cert.date}</Badge>
+                      <Badge variant="outline" className="text-xs self-start sm:self-center">{cert.date}</Badge>
                     </div>
                   ))}
                 </div>
@@ -173,26 +178,26 @@ const CandidateProfileModal = ({ open, onOpenChange, candidate }: CandidateProfi
           {candidate.projects && candidate.projects.length > 0 && (
             <Card>
               <CardHeader>
-                <CardTitle className="flex items-center space-x-2">
-                  <Code className="h-5 w-5" />
+                <CardTitle className="flex items-center space-x-2 text-base sm:text-lg">
+                  <Code className="h-4 w-4 sm:h-5 sm:w-5" />
                   <span>Projects</span>
                 </CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
                   {candidate.projects.map((project: any, index: number) => (
-                    <div key={index} className="border rounded-lg p-4">
-                      <div className="flex justify-between items-start mb-2">
-                        <h4 className="font-semibold">{project.name}</h4>
+                    <div key={index} className="border rounded-lg p-3 sm:p-4">
+                      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start mb-2 space-y-2 sm:space-y-0">
+                        <h4 className="font-semibold text-sm sm:text-base">{project.name}</h4>
                         {project.link && (
-                          <Button variant="outline" size="sm" asChild>
+                          <Button variant="outline" size="sm" asChild className="w-full sm:w-auto">
                             <a href={project.link} target="_blank" rel="noopener noreferrer">
                               View Project
                             </a>
                           </Button>
                         )}
                       </div>
-                      <p className="text-gray-700">{project.description}</p>
+                      <p className="text-gray-700 text-xs sm:text-sm leading-relaxed">{project.description}</p>
                     </div>
                   ))}
                 </div>
@@ -202,7 +207,7 @@ const CandidateProfileModal = ({ open, onOpenChange, candidate }: CandidateProfi
         </div>
 
         <div className="flex justify-end pt-4 border-t">
-          <Button onClick={() => onOpenChange(false)}>
+          <Button onClick={() => onOpenChange(false)} className="w-full sm:w-auto">
             Close
           </Button>
         </div>
