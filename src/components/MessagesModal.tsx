@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -15,6 +14,26 @@ interface MessagesModalProps {
   userId: string;
 }
 
+interface AcceptedMessage {
+  id: string;
+  jobTitle: string;
+  company: string;
+  message: string;
+  interviewDate: string;
+  interviewTime: string;
+  location: string;
+  confirmed: boolean;
+  reminderSet?: boolean;
+  reminderTime?: string;
+}
+
+interface RejectedMessage {
+  id: string;
+  jobTitle: string;
+  company: string;
+  message: string;
+}
+
 const mockMessages = {
   accepted: [
     {
@@ -25,7 +44,8 @@ const mockMessages = {
       interviewDate: '2024-02-15',
       interviewTime: '10:00 AM',
       location: 'Online - Zoom Meeting',
-      confirmed: false
+      confirmed: false,
+      reminderSet: false
     },
     {
       id: '2',
@@ -35,9 +55,10 @@ const mockMessages = {
       interviewDate: '2024-02-18',
       interviewTime: '2:00 PM',
       location: 'Rabat Office - Building A, Floor 3',
-      confirmed: false
+      confirmed: false,
+      reminderSet: false
     }
-  ],
+  ] as AcceptedMessage[],
   rejected: [
     {
       id: '3',
@@ -63,13 +84,13 @@ const mockMessages = {
       company: 'Atlas Construction',
       message: 'We thank you for your application for the Project Manager role. After reviewing all applications, we have decided to proceed with candidates who have more experience in large-scale infrastructure projects.'
     }
-  ]
+  ] as RejectedMessage[]
 };
 
 const MessagesModal = ({ open, onOpenChange, userId }: MessagesModalProps) => {
   const [selectedTab, setSelectedTab] = useState('accepted');
-  const [acceptedMessages, setAcceptedMessages] = useState(mockMessages.accepted);
-  const [rejectedMessages, setRejectedMessages] = useState(mockMessages.rejected);
+  const [acceptedMessages, setAcceptedMessages] = useState<AcceptedMessage[]>(mockMessages.accepted);
+  const [rejectedMessages, setRejectedMessages] = useState<RejectedMessage[]>(mockMessages.rejected);
   const [reminderSettings, setReminderSettings] = useState<{[key: string]: string}>({});
   const { toast } = useToast();
 
