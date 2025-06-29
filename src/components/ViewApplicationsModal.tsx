@@ -1,4 +1,5 @@
 
+
 import { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -178,8 +179,8 @@ interface ViewApplicationsModalProps {
 }
 
 const ViewApplicationsModal = ({ open, onOpenChange }: ViewApplicationsModalProps) => {
-  const [selectedJob, setSelectedJob] = useState<string>('all');
-  const [filteredApplications, setFilteredApplications] = useState(mockApplications);
+  const [selectedJob, setSelectedJob] = useState<string>('');
+  const [filteredApplications, setFilteredApplications] = useState<any[]>([]);
   const [showCandidateProfile, setShowCandidateProfile] = useState(false);
   const [showInterviewSchedule, setShowInterviewSchedule] = useState(false);
   const [selectedCandidate, setSelectedCandidate] = useState<any>(null);
@@ -192,29 +193,33 @@ const ViewApplicationsModal = ({ open, onOpenChange }: ViewApplicationsModalProp
   const [aiQuery, setAiQuery] = useState('');
   const [aiResponse, setAiResponse] = useState('');
   const [showAiResponse, setShowAiResponse] = useState(false);
+  const [selectedCandidates, setSelectedCandidates] = useState<any[]>([]);
   const { toast } = useToast();
 
   const jobs = [
-    { id: '1', title: 'Senior Full Stack Developer', companyName: 'TechMorocco Solutions' },
-    { id: '2', title: 'Digital Marketing Manager', companyName: 'Maroc Digital Agency' },
-    { id: '3', title: 'UX/UI Designer', companyName: 'Creative Studio Maroc' }
+    { id: '1', title: 'Senior Full Stack Developer', companyName: 'TechMorocco Solutions', applicants: 18 },
+    { id: '2', title: 'Digital Marketing Manager', companyName: 'Maroc Digital Agency', applicants: 15 },
+    { id: '3', title: 'UX/UI Designer', companyName: 'Creative Studio Maroc', applicants: 22 }
   ];
 
-  // Reset filters when modal opens
+  // Reset when modal opens
   useEffect(() => {
     if (open) {
-      setSelectedJob('all');
+      setSelectedJob('');
       setFilters({ experience: '', skills: '', location: '' });
-      setFilteredApplications(mockApplications);
+      setFilteredApplications([]);
+      setSelectedCandidates([]);
+      setShowAiResponse(false);
     }
   }, [open]);
 
   useEffect(() => {
-    let filtered = mockApplications;
-
-    if (selectedJob !== 'all') {
-      filtered = filtered.filter(app => app.jobId === selectedJob);
+    if (!selectedJob) {
+      setFilteredApplications([]);
+      return;
     }
+
+    let filtered = mockApplications.filter(app => app.jobId === selectedJob);
 
     if (filters.experience) {
       const minExp = parseInt(filters.experience);
@@ -253,31 +258,43 @@ const ViewApplicationsModal = ({ open, onOpenChange }: ViewApplicationsModalProp
       return;
     }
 
+    if (!selectedJob) {
+      toast({
+        title: "Select a Job First",
+        description: "Please select a job to analyze candidates.",
+        variant: "destructive"
+      });
+      return;
+    }
+
     let response = '';
+    let candidates: any[] = [];
     const query = aiQuery.toLowerCase();
 
     if (query.includes('best 5 candidates') || query.includes('top 5 candidates')) {
-      // Select 5 random candidates from current filtered list
-      const randomCandidates = [...filteredApplications]
+      // Select 5 candidates from current filtered list
+      candidates = [...filteredApplications]
         .sort(() => Math.random() - 0.5)
-        .slice(0, 5)
-        .map(app => app.candidate.fullName);
+        .slice(0, Math.min(5, filteredApplications.length))
+        .map(app => app.candidate);
       
-      response = `I've selected these 5 candidates: ${randomCandidates.join(', ')}. I chose them because they demonstrate strong technical skills, excellent communication abilities, and relevant experience that aligns with your job requirements. Their profiles show consistent career progression, diverse skill sets including modern frameworks, plus they have strong educational backgrounds. Additionally, they show proficiency in multiple languages which is valuable for international projects.`;
+      response = `I've selected these ${candidates.length} candidates: ${candidates.map(c => c.fullName).join(', ')}. I chose them because they demonstrate strong technical skills, excellent communication abilities, and relevant experience that aligns with your job requirements. Their profiles show consistent career progression, diverse skill sets including modern frameworks, plus they have strong educational backgrounds. Additionally, they show proficiency in multiple languages which is valuable for international projects.`;
+    } else if (query.includes('best 3 candidates') || query.includes('top 3 candidates')) {
+      candidates = [...filteredApplications]
+        .sort(() => Math.random() - 0.5)
+        .slice(0, Math.min(3, filteredApplications.length))
+        .map(app => app.candidate);
+      
+      response = `I've selected these ${candidates.length} top candidates: ${candidates.map(c => c.fullName).join(', ')}. These candidates stand out due to their exceptional technical expertise, proven track record, and strong communication skills that make them ideal for your role.`;
     } else if (query.includes('filter') || query.includes('search')) {
-      response = `Based on your current applications, I can help you filter by experience level (${Math.min(...filteredApplications.map(app => {
-        const expMatch = app.candidate.workExperience?.[0]?.description?.match(/(\d+)\+?\s*years?/i);
-        return expMatch ? parseInt(expMatch[1]) : 0;
-      }))}-${Math.max(...filteredApplications.map(app => {
-        const expMatch = app.candidate.workExperience?.[0]?.description?.match(/(\d+)\+?\s*years?/i);
-        return expMatch ? parseInt(expMatch[1]) : 0;
-      }))} years), skills, and location. The most common skills in your applicant pool are JavaScript, React, and Python. I recommend focusing on candidates with 3+ years of experience for senior roles.`;
+      response = `Based on your current applications for ${jobs.find(j => j.id === selectedJob)?.title}, I can help you filter by experience level, skills, and location. The most common skills in your applicant pool are JavaScript, React, and modern web technologies. I recommend focusing on candidates with relevant experience for this position.`;
     } else if (query.includes('interview') || query.includes('schedule')) {
-      response = `I recommend scheduling interviews with the top 30% of candidates who match your requirements. Based on the applications, the best time slots are Tuesday-Thursday, 10 AM-4 PM. I suggest starting with candidates who have the strongest skill match and relevant experience. Would you like me to suggest specific candidates for interviews?`;
+      response = `I recommend scheduling interviews with the top candidates who match your requirements for ${jobs.find(j => j.id === selectedJob)?.title}. Based on the applications, the best time slots are Tuesday-Thursday, 10 AM-4 PM. Would you like me to suggest specific candidates for interviews?`;
     } else {
-      response = `I can help you analyze candidates, suggest the best matches, filter applications, and provide insights about your applicant pool. Try asking me about 'best candidates', 'filtering options', or 'interview scheduling' for specific insights about your ${filteredApplications.length} applications.`;
+      response = `I can help you analyze candidates for ${jobs.find(j => j.id === selectedJob)?.title}, suggest the best matches, filter applications, and provide insights about your applicant pool. Try asking me about 'best 5 candidates', 'top 3 candidates', 'filtering options', or 'interview scheduling' for specific insights about your ${filteredApplications.length} applications.`;
     }
 
+    setSelectedCandidates(candidates);
     setAiResponse(response);
     setShowAiResponse(true);
     setAiQuery('');
@@ -290,7 +307,6 @@ const ViewApplicationsModal = ({ open, onOpenChange }: ViewApplicationsModalProp
 
   const clearFilters = () => {
     setFilters({ experience: '', skills: '', location: '' });
-    setSelectedJob('all');
   };
 
   const handleViewProfile = (candidate: any) => {
@@ -312,7 +328,7 @@ const ViewApplicationsModal = ({ open, onOpenChange }: ViewApplicationsModalProp
           <DialogHeader>
             <DialogTitle className="text-xl sm:text-2xl font-bold flex items-center space-x-2">
               <Users className="h-5 w-5 sm:h-6 sm:w-6" />
-              <span>View Applications ({filteredApplications.length})</span>
+              <span>View Applications {selectedJob ? `(${filteredApplications.length})` : ''}</span>
             </DialogTitle>
           </DialogHeader>
 
@@ -329,8 +345,9 @@ const ViewApplicationsModal = ({ open, onOpenChange }: ViewApplicationsModalProp
                 onChange={(e) => setAiQuery(e.target.value)}
                 className="flex-1"
                 onKeyPress={(e) => e.key === 'Enter' && handleAiQuery()}
+                disabled={!selectedJob}
               />
-              <Button onClick={handleAiQuery} className="gradient-bg w-full sm:w-auto">
+              <Button onClick={handleAiQuery} className="gradient-bg w-full sm:w-auto" disabled={!selectedJob}>
                 <Send className="h-4 w-4 mr-2" />
                 Ask AI
               </Button>
@@ -343,7 +360,57 @@ const ViewApplicationsModal = ({ open, onOpenChange }: ViewApplicationsModalProp
                     <Brain className="h-5 w-5 text-purple-600 mt-1 flex-shrink-0" />
                     <div className="flex-1">
                       <h4 className="font-semibold text-purple-800 mb-2">AI Analysis</h4>
-                      <p className="text-gray-700 text-sm leading-relaxed">{aiResponse}</p>
+                      <p className="text-gray-700 text-sm leading-relaxed mb-4">{aiResponse}</p>
+                      
+                      {selectedCandidates.length > 0 && (
+                        <div className="space-y-3">
+                          <h5 className="font-medium text-purple-700">Selected Candidates:</h5>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                            {selectedCandidates.map((candidate, index) => (
+                              <div key={index} className="bg-white p-3 rounded-lg border border-purple-100">
+                                <div className="flex items-start space-x-3">
+                                  <Avatar className="h-10 w-10">
+                                    <AvatarImage src={candidate.profilePhoto} />
+                                    <AvatarFallback className="bg-primary/10 text-primary font-semibold">
+                                      {candidate.fullName.charAt(0)}
+                                    </AvatarFallback>
+                                  </Avatar>
+                                  <div className="flex-1 min-w-0">
+                                    <h6 className="font-semibold text-sm text-gray-900">{candidate.fullName}</h6>
+                                    <p className="text-xs text-gray-600 mb-2">{candidate.location}</p>
+                                    <div className="flex flex-wrap gap-1 mb-2">
+                                      {candidate.skills?.slice(0, 3).map((skill: any, skillIndex: number) => (
+                                        <Badge key={skillIndex} variant="outline" className="text-xs">
+                                          {skill.name || skill}
+                                        </Badge>
+                                      ))}
+                                    </div>
+                                    <div className="flex space-x-2">
+                                      <Button 
+                                        size="sm" 
+                                        variant="outline" 
+                                        onClick={() => handleViewProfile(candidate)}
+                                        className="text-xs"
+                                      >
+                                        <Eye className="h-3 w-3 mr-1" />
+                                        View
+                                      </Button>
+                                      <Button 
+                                        size="sm" 
+                                        onClick={() => handleScheduleInterview(candidate, selectedJob)}
+                                        className="text-xs gradient-bg"
+                                      >
+                                        <Calendar className="h-3 w-3 mr-1" />
+                                        Interview
+                                      </Button>
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
                     </div>
                     <Button
                       variant="ghost"
@@ -359,134 +426,145 @@ const ViewApplicationsModal = ({ open, onOpenChange }: ViewApplicationsModalProp
             )}
           </div>
 
-          {/* Filters */}
+          {/* Job Selection */}
           <div className="space-y-4">
             <div className="flex flex-col sm:flex-row gap-4">
               <Select value={selectedJob} onValueChange={setSelectedJob}>
-                <SelectTrigger className="w-full sm:w-[200px]">
-                  <SelectValue placeholder="Filter by job" />
+                <SelectTrigger className="w-full sm:w-[300px]">
+                  <SelectValue placeholder="Select a job to view applications" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">All Jobs</SelectItem>
                   {jobs.map(job => (
-                    <SelectItem key={job.id} value={job.id}>{job.title}</SelectItem>
+                    <SelectItem key={job.id} value={job.id}>
+                      {job.title} - {job.applicants} applicants
+                    </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
 
-              <Select value={filters.experience} onValueChange={(value) => setFilters(prev => ({ ...prev, experience: value }))}>
-                <SelectTrigger className="w-full sm:w-[200px]">
-                  <SelectValue placeholder="Min experience" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="any">Any experience</SelectItem>
-                  <SelectItem value="1">1+ years</SelectItem>
-                  <SelectItem value="3">3+ years</SelectItem>
-                  <SelectItem value="5">5+ years</SelectItem>
-                  <SelectItem value="10">10+ years</SelectItem>
-                </SelectContent>
-              </Select>
+              {selectedJob && (
+                <>
+                  <Select value={filters.experience} onValueChange={(value) => setFilters(prev => ({ ...prev, experience: value }))}>
+                    <SelectTrigger className="w-full sm:w-[200px]">
+                      <SelectValue placeholder="Min experience" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="">Any experience</SelectItem>
+                      <SelectItem value="1">1+ years</SelectItem>
+                      <SelectItem value="3">3+ years</SelectItem>
+                      <SelectItem value="5">5+ years</SelectItem>
+                      <SelectItem value="10">10+ years</SelectItem>
+                    </SelectContent>
+                  </Select>
 
-              <Input
-                placeholder="Filter by skills"
-                value={filters.skills}
-                onChange={(e) => setFilters(prev => ({ ...prev, skills: e.target.value }))}
-                className="w-full sm:w-[200px]"
-              />
+                  <Input
+                    placeholder="Filter by skills"
+                    value={filters.skills}
+                    onChange={(e) => setFilters(prev => ({ ...prev, skills: e.target.value }))}
+                    className="w-full sm:w-[200px]"
+                  />
 
-              <Input
-                placeholder="Filter by location"
-                value={filters.location}
-                onChange={(e) => setFilters(prev => ({ ...prev, location: e.target.value }))}
-                className="w-full sm:w-[200px]"
-              />
+                  <Input
+                    placeholder="Filter by location"
+                    value={filters.location}
+                    onChange={(e) => setFilters(prev => ({ ...prev, location: e.target.value }))}
+                    className="w-full sm:w-[200px]"
+                  />
 
-              <Button variant="outline" onClick={clearFilters} className="w-full sm:w-auto">
-                Clear Filters
-              </Button>
+                  <Button variant="outline" onClick={clearFilters} className="w-full sm:w-auto">
+                    Clear Filters
+                  </Button>
+                </>
+              )}
             </div>
           </div>
 
           {/* Applications Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {filteredApplications.map((application) => (
-              <Card key={application.id} className="hover:shadow-soft transition-all duration-200">
-                <CardHeader className="pb-3">
-                  <div className="flex items-start justify-between">
-                    <div className="flex items-center space-x-3">
-                      <Avatar className="h-10 w-10">
-                        <AvatarImage src={application.candidate.profilePhoto} />
-                        <AvatarFallback className="bg-primary/10 text-primary font-semibold">
-                          {application.candidate.fullName.charAt(0)}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div>
-                        <h4 className="font-semibold text-sm">{application.candidate.fullName}</h4>
-                        <p className="text-xs text-gray-600">
-                          {jobs.find(j => j.id === application.jobId)?.title}
-                        </p>
+          {!selectedJob ? (
+            <div className="text-center py-12">
+              <Users className="h-16 w-16 mx-auto text-gray-300 mb-4" />
+              <h3 className="text-lg font-semibold text-gray-500 mb-2">Select a Job Position</h3>
+              <p className="text-gray-400">Choose a job from the dropdown above to view its applications.</p>
+            </div>
+          ) : filteredApplications.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {filteredApplications.map((application) => (
+                <Card key={application.id} className="hover:shadow-soft transition-all duration-200">
+                  <CardHeader className="pb-3">
+                    <div className="flex items-start justify-between">
+                      <div className="flex items-center space-x-3">
+                        <Avatar className="h-10 w-10">
+                          <AvatarImage src={application.candidate.profilePhoto} />
+                          <AvatarFallback className="bg-primary/10 text-primary font-semibold">
+                            {application.candidate.fullName.charAt(0)}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div>
+                          <h4 className="font-semibold text-sm">{application.candidate.fullName}</h4>
+                          <p className="text-xs text-gray-600">
+                            {jobs.find(j => j.id === application.jobId)?.title}
+                          </p>
+                        </div>
+                      </div>
+                      <Badge variant={application.status === 'pending' ? 'secondary' : 'default'} className="text-xs">
+                        {application.status}
+                      </Badge>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    <div className="space-y-1 text-xs">
+                      <div className="flex items-center space-x-2">
+                        <Mail className="h-3 w-3 text-gray-500" />
+                        <span className="truncate">{application.candidate.email}</span>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <Phone className="h-3 w-3 text-gray-500" />
+                        <span>{application.candidate.phone}</span>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <MapPin className="h-3 w-3 text-gray-500" />
+                        <span>{application.candidate.location}</span>
                       </div>
                     </div>
-                    <Badge variant={application.status === 'pending' ? 'secondary' : 'default'} className="text-xs">
-                      {application.status}
-                    </Badge>
-                  </div>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  <div className="space-y-1 text-xs">
-                    <div className="flex items-center space-x-2">
-                      <Mail className="h-3 w-3 text-gray-500" />
-                      <span className="truncate">{application.candidate.email}</span>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <Phone className="h-3 w-3 text-gray-500" />
-                      <span>{application.candidate.phone}</span>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <MapPin className="h-3 w-3 text-gray-500" />
-                      <span>{application.candidate.location}</span>
-                    </div>
-                  </div>
 
-                  <div>
-                    <h5 className="text-xs font-medium mb-1">Top Skills</h5>
-                    <div className="flex flex-wrap gap-1">
-                      {(application.candidate.skills || []).slice(0, 3).map((skill: any, index: number) => (
-                        <Badge key={index} variant="outline" className="text-xs">
-                          {skill.name || skill}
-                        </Badge>
-                      ))}
+                    <div>
+                      <h5 className="text-xs font-medium mb-1">Top Skills</h5>
+                      <div className="flex flex-wrap gap-1">
+                        {(application.candidate.skills || []).slice(0, 3).map((skill: any, index: number) => (
+                          <Badge key={index} variant="outline" className="text-xs">
+                            {skill.name || skill}
+                          </Badge>
+                        ))}
+                      </div>
                     </div>
-                  </div>
 
-                  <div className="flex space-x-2">
-                    <Button 
-                      size="sm" 
-                      variant="outline" 
-                      onClick={() => handleViewProfile(application.candidate)}
-                      className="flex-1 text-xs"
-                    >
-                      <Eye className="h-3 w-3 mr-1" />
-                      View Profile
-                    </Button>
-                    <Button 
-                      size="sm" 
-                      onClick={() => handleScheduleInterview(application.candidate, application.jobId)}
-                      className="flex-1 text-xs gradient-bg"
-                    >
-                      <Calendar className="h-3 w-3 mr-1" />
-                      Interview
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-
-          {filteredApplications.length === 0 && (
+                    <div className="flex space-x-2">
+                      <Button 
+                        size="sm" 
+                        variant="outline" 
+                        onClick={() => handleViewProfile(application.candidate)}
+                        className="flex-1 text-xs"
+                      >
+                        <Eye className="h-3 w-3 mr-1" />
+                        View Profile
+                      </Button>
+                      <Button 
+                        size="sm" 
+                        onClick={() => handleScheduleInterview(application.candidate, application.jobId)}
+                        className="flex-1 text-xs gradient-bg"
+                      >
+                        <Calendar className="h-3 w-3 mr-1" />
+                        Interview
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          ) : (
             <div className="text-center py-8">
               <Users className="h-12 w-12 mx-auto text-gray-400 mb-4" />
-              <p className="text-gray-500">No applications match your current filters.</p>
+              <p className="text-gray-500">No applications match your current filters for this job.</p>
             </div>
           )}
         </DialogContent>
