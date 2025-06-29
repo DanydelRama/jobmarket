@@ -1,37 +1,17 @@
+
 import { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { CheckCircle, XCircle, Calendar, MapPin, Clock, Bell, AlarmClock } from "lucide-react";
+import { CheckCircle, XCircle, Calendar, MapPin, Clock, Bell } from "lucide-react";
 
 interface MessagesModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   userId: string;
-}
-
-interface AcceptedMessage {
-  id: string;
-  jobTitle: string;
-  company: string;
-  message: string;
-  interviewDate: string;
-  interviewTime: string;
-  location: string;
-  confirmed: boolean;
-  reminderSet?: boolean;
-  reminderTime?: string;
-}
-
-interface RejectedMessage {
-  id: string;
-  jobTitle: string;
-  company: string;
-  message: string;
 }
 
 const mockMessages = {
@@ -44,8 +24,7 @@ const mockMessages = {
       interviewDate: '2024-02-15',
       interviewTime: '10:00 AM',
       location: 'Online - Zoom Meeting',
-      confirmed: false,
-      reminderSet: false
+      confirmed: false
     },
     {
       id: '2',
@@ -55,10 +34,9 @@ const mockMessages = {
       interviewDate: '2024-02-18',
       interviewTime: '2:00 PM',
       location: 'Rabat Office - Building A, Floor 3',
-      confirmed: false,
-      reminderSet: false
+      confirmed: false
     }
-  ] as AcceptedMessage[],
+  ],
   rejected: [
     {
       id: '3',
@@ -84,58 +62,27 @@ const mockMessages = {
       company: 'Atlas Construction',
       message: 'We thank you for your application for the Project Manager role. After reviewing all applications, we have decided to proceed with candidates who have more experience in large-scale infrastructure projects.'
     }
-  ] as RejectedMessage[]
+  ]
 };
 
 const MessagesModal = ({ open, onOpenChange, userId }: MessagesModalProps) => {
   const [selectedTab, setSelectedTab] = useState('accepted');
-  const [acceptedMessages, setAcceptedMessages] = useState<AcceptedMessage[]>(mockMessages.accepted);
-  const [rejectedMessages, setRejectedMessages] = useState<RejectedMessage[]>(mockMessages.rejected);
-  const [reminderSettings, setReminderSettings] = useState<{[key: string]: string}>({});
+  const [acceptedMessages, setAcceptedMessages] = useState(mockMessages.accepted);
+  const [rejectedMessages, setRejectedMessages] = useState(mockMessages.rejected);
   const { toast } = useToast();
 
   const handleConfirmInterview = (messageId: string) => {
     const updatedMessages = acceptedMessages.map(msg => 
       msg.id === messageId 
-        ? { ...msg, confirmed: true, reminderSet: false }
+        ? { ...msg, confirmed: true }
         : msg
     );
     setAcceptedMessages(updatedMessages);
     
     toast({
       title: "Interview Confirmed",
-      description: "Your interview has been confirmed successfully!",
+      description: "Your interview has been confirmed successfully. Reminder set!",
     });
-  };
-
-  const handleSetReminder = (messageId: string, reminderTime: string) => {
-    const updatedMessages = acceptedMessages.map(msg => 
-      msg.id === messageId 
-        ? { ...msg, reminderSet: true, reminderTime }
-        : msg
-    );
-    setAcceptedMessages(updatedMessages);
-    
-    const message = acceptedMessages.find(msg => msg.id === messageId);
-    if (message) {
-      // In a real app, you would set up actual notifications/alarms here
-      const reminderText = `${reminderTime} minutes before your interview`;
-      
-      toast({
-        title: "Reminder Set!",
-        description: `You'll be notified ${reminderText} for your ${message.jobTitle} interview.`,
-      });
-
-      // Simulate setting a browser notification (in a real app, you'd use the Notifications API)
-      if ('Notification' in window && Notification.permission === 'granted') {
-        setTimeout(() => {
-          new Notification(`Interview Reminder`, {
-            body: `Your interview for ${message.jobTitle} is in ${reminderTime} minutes`,
-            icon: '/favicon.ico'
-          });
-        }, 5000); // Demo: show in 5 seconds instead of actual time
-      }
-    }
   };
 
   const checkUpcomingInterviews = () => {
@@ -161,13 +108,6 @@ const MessagesModal = ({ open, onOpenChange, userId }: MessagesModalProps) => {
       });
     }
   };
-
-  // Request notification permission on component mount
-  useEffect(() => {
-    if ('Notification' in window && Notification.permission === 'default') {
-      Notification.requestPermission();
-    }
-  }, []);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -225,12 +165,6 @@ const MessagesModal = ({ open, onOpenChange, userId }: MessagesModalProps) => {
                             Confirmed
                           </Badge>
                         )}
-                        {message.reminderSet && (
-                          <Badge variant="outline" className="text-blue-700 border-blue-700 text-xs">
-                            <AlarmClock className="h-3 w-3 mr-1" />
-                            Reminder Set
-                          </Badge>
-                        )}
                       </div>
                     </div>
                   </CardHeader>
@@ -264,50 +198,9 @@ const MessagesModal = ({ open, onOpenChange, userId }: MessagesModalProps) => {
                       </Button>
                     )}
 
-                    {message.confirmed && !message.reminderSet && (
-                      <div className="space-y-3">
-                        <div className="text-center text-green-700 font-medium text-sm sm:text-base">
-                          ✓ Interview Confirmed
-                        </div>
-                        <div className="flex flex-col sm:flex-row gap-2 items-center">
-                          <Select
-                            value={reminderSettings[message.id] || ''}
-                            onValueChange={(value) => setReminderSettings(prev => ({ ...prev, [message.id]: value }))}
-                          >
-                            <SelectTrigger className="w-full sm:w-[200px]">
-                              <SelectValue placeholder="Set reminder" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="5">5 minutes before</SelectItem>
-                              <SelectItem value="10">10 minutes before</SelectItem>
-                              <SelectItem value="15">15 minutes before</SelectItem>
-                              <SelectItem value="20">20 minutes before</SelectItem>
-                              <SelectItem value="30">30 minutes before</SelectItem>
-                              <SelectItem value="60">1 hour before</SelectItem>
-                            </SelectContent>
-                          </Select>
-                          <Button
-                            onClick={() => handleSetReminder(message.id, reminderSettings[message.id] || '15')}
-                            disabled={!reminderSettings[message.id]}
-                            variant="outline"
-                            className="w-full sm:w-auto"
-                          >
-                            <Bell className="h-4 w-4 mr-2" />
-                            Set Reminder
-                          </Button>
-                        </div>
-                      </div>
-                    )}
-
-                    {message.confirmed && message.reminderSet && (
-                      <div className="text-center space-y-2">
-                        <div className="text-green-700 font-medium text-sm sm:text-base">
-                          ✓ Interview Confirmed
-                        </div>
-                        <div className="text-blue-700 text-sm flex items-center justify-center space-x-2">
-                          <AlarmClock className="h-4 w-4" />
-                          <span>Reminder set for {message.reminderTime || '15'} minutes before</span>
-                        </div>
+                    {message.confirmed && (
+                      <div className="text-center text-green-700 font-medium text-sm sm:text-base">
+                        ✓ Interview Confirmed
                       </div>
                     )}
                   </CardContent>
