@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -199,6 +200,15 @@ const ViewApplicationsModal = ({ open, onOpenChange }: ViewApplicationsModalProp
     { id: '3', title: 'UX/UI Designer', companyName: 'Creative Studio Maroc' }
   ];
 
+  // Reset filters when modal opens
+  useEffect(() => {
+    if (open) {
+      setSelectedJob('all');
+      setFilters({ experience: '', skills: '', location: '' });
+      setFilteredApplications(mockApplications);
+    }
+  }, [open]);
+
   useEffect(() => {
     let filtered = mockApplications;
 
@@ -369,7 +379,7 @@ const ViewApplicationsModal = ({ open, onOpenChange }: ViewApplicationsModalProp
                   <SelectValue placeholder="Min experience" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Any experience</SelectItem>
+                  <SelectItem value="any">Any experience</SelectItem>
                   <SelectItem value="1">1+ years</SelectItem>
                   <SelectItem value="3">3+ years</SelectItem>
                   <SelectItem value="5">5+ years</SelectItem>
