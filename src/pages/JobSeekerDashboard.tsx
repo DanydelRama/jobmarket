@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,9 +11,9 @@ import { useToast } from "@/hooks/use-toast";
 import { Search, Filter, MapPin, Building2, Clock, User, MessageSquare, Bell, LogOut, Globe } from "lucide-react";
 import { mockJobs, generateMockJobs, AVAILABLE_SKILLS, Job } from "@/data/mockData";
 import JobFilterModal from "@/components/JobFilterModal";
-import ProfileModal from "@/components/ProfileModal";
 import MessagesModal from "@/components/MessagesModal";
 import ApplicationModal from "@/components/ApplicationModal";
+import EditableProfileModal from "@/components/EditableProfileModal";
 
 const JobSeekerDashboard = () => {
   const [user, setUser] = useState<any>(null);
@@ -309,7 +308,7 @@ const JobSeekerDashboard = () => {
         onFiltersChange={setFilters}
       />
 
-      <ProfileModal
+      <EditableProfileModal
         open={showProfile}
         onOpenChange={setShowProfile}
         user={user}

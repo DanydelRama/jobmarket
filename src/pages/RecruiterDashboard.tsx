@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -7,11 +6,13 @@ import { useToast } from "@/hooks/use-toast";
 import { Plus, Eye, Users, LogOut, Globe, Briefcase, TrendingUp, Settings } from "lucide-react";
 import CreateJobModal from "@/components/CreateJobModal";
 import ManageJobsModal from "@/components/ManageJobsModal";
+import ViewApplicationsModal from "@/components/ViewApplicationsModal";
 
 const RecruiterDashboard = () => {
   const [user, setUser] = useState<any>(null);
   const [showCreateJob, setShowCreateJob] = useState(false);
   const [showManageJobs, setShowManageJobs] = useState(false);
+  const [showViewApplications, setShowViewApplications] = useState(false);
   const [jobs, setJobs] = useState<any[]>([]);
   const { toast } = useToast();
 
@@ -139,7 +140,7 @@ const RecruiterDashboard = () => {
             </CardContent>
           </Card>
 
-          <Card className="hover:shadow-soft transition-all duration-200 cursor-pointer group">
+          <Card className="hover:shadow-soft transition-all duration-200 cursor-pointer group" onClick={() => setShowViewApplications(true)}>
             <CardHeader className="text-center pb-4">
               <div className="bg-gradient-to-r from-purple-500 to-pink-500 p-4 rounded-2xl w-16 h-16 mx-auto mb-4 group-hover:scale-110 transition-transform duration-200">
                 <Users className="h-8 w-8 text-white" />
@@ -196,6 +197,11 @@ const RecruiterDashboard = () => {
       <ManageJobsModal
         open={showManageJobs}
         onOpenChange={setShowManageJobs}
+      />
+
+      <ViewApplicationsModal
+        open={showViewApplications}
+        onOpenChange={setShowViewApplications}
       />
     </div>
   );

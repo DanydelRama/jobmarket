@@ -1,11 +1,12 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { CheckCircle, XCircle, Calendar, MapPin, Clock } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+import { CheckCircle, XCircle, Calendar, MapPin, Clock, Bell } from "lucide-react";
 
 interface MessagesModalProps {
   open: boolean;
@@ -15,77 +16,110 @@ interface MessagesModalProps {
 
 const MessagesModal = ({ open, onOpenChange, userId }: MessagesModalProps) => {
   const [selectedTab, setSelectedTab] = useState('accepted');
+  const [acceptedMessages, setAcceptedMessages] = useState<any[]>([]);
+  const [rejectedMessages, setRejectedMessages] = useState<any[]>([]);
+  const { toast } = useToast();
 
-  // Mock messages data - in real app this would come from Supabase
-  const mockAcceptedMessages = [
-    {
-      id: '1',
-      jobTitle: 'Senior Full Stack Developer',
-      company: 'TechMorocco Solutions',
-      status: 'accepted',
-      interviewDate: '2024-02-15',
-      interviewTime: '14:00',
-      location: 'Casablanca Office',
-      format: 'in-person',
-      message: 'Congratulations! We would like to invite you for an interview.',
-      confirmed: false
-    },
-    {
-      id: '2',
-      jobTitle: 'Digital Marketing Manager',
-      company: 'Maroc Digital Agency',
-      status: 'accepted',
-      interviewDate: '2024-02-18',
-      interviewTime: '10:30',
-      location: 'Online Meeting',
-      format: 'online',
-      message: 'We are impressed with your profile and would like to schedule an interview.',
-      confirmed: true
+  useEffect(() => {
+    if (open) {
+      // Load messages from localStorage
+      const candidateMessages = JSON.parse(localStorage.getItem('candidateMessages') || '[]');
+      
+      // Filter messages by status
+      const accepted = candidateMessages.filter((msg: any) => msg.status === 'accepted');
+      const rejected = candidateMessages.filter((msg: any) => msg.status === 'rejected');
+      
+      setAcceptedMessages(accepted);
+      setRejectedMessages(rejected);
     }
-  ];
-
-  const mockRejectedMessages = [
-    {
-      id: '3',
-      jobTitle: 'Financial Analyst',
-      company: 'Casablanca Finance Group',
-      status: 'rejected',
-      message: 'Thank you for your interest. Unfortunately, we have decided to move forward with other candidates.'
-    }
-  ];
+  }, [open]);
 
   const handleConfirmInterview = (messageId: string) => {
-    // In real app, this would update the backend
-    console.log('Confirming interview for message:', messageId);
+    const updatedMessages = acceptedMessages.map(msg => 
+      msg.id === messageId 
+        ? { ...msg, confirmed: true }
+        : msg
+    );
+    setAcceptedMessages(updatedMessages);
+    
+    // Update localStorage
+    const allMessages = JSON.parse(localStorage.getItem('candidateMessages') || '[]');
+    const updatedAllMessages = allMessages.map((msg: any) => 
+      msg.id === messageId 
+        ? { ...msg, confirmed: true }
+        : msg
+    );
+    localStorage.setItem('candidateMessages', JSON.stringify(updatedAllMessages));
+    
+    toast({
+      title: "Interview Confirmed",
+      description: "Your interview has been confirmed successfully.",
+    });
   };
+
+  const checkUpcomingInterviews = () => {
+    const today = new Date();
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    
+    const upcomingInterviews = acceptedMessages.filter(msg => {
+      const interviewDate = new Date(msg.interviewDate);
+      return interviewDate <= tomorrow && interviewDate >= today && msg.confirmed;
+    });
+
+    if (upcomingInterviews.length > 0) {
+      toast({
+        title: "Interview Reminder",
+        description: `You have ${upcomingInterviews.length} interview(s) coming up soon!`,
+        duration: 5000,
+      });
+    }
+  };
+
+  useEffect(() => {
+    if (acceptedMessages.length > 0) {
+      checkUpcomingInterviews();
+    }
+  }, [acceptedMessages]);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-2xl max-h-[80vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-3xl max-h-[80vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="text-2xl font-bold">Messages</DialogTitle>
+          <div className="flex items-center justify-between">
+            <DialogTitle className="text-2xl font-bold">Messages</DialogTitle>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={checkUpcomingInterviews}
+              className="flex items-center space-x-2"
+            >
+              <Bell className="h-4 w-4" />
+              <span>Check Reminders</span>
+            </Button>
+          </div>
         </DialogHeader>
 
         <Tabs value={selectedTab} onValueChange={setSelectedTab}>
           <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="accepted" className="flex items-center space-x-2">
               <CheckCircle className="h-4 w-4" />
-              <span>Accepted ({mockAcceptedMessages.length})</span>
+              <span>Accepted ({acceptedMessages.length})</span>
             </TabsTrigger>
             <TabsTrigger value="rejected" className="flex items-center space-x-2">
               <XCircle className="h-4 w-4" />
-              <span>Rejected ({mockRejectedMessages.length})</span>
+              <span>Rejected ({rejectedMessages.length})</span>
             </TabsTrigger>
           </TabsList>
 
           <TabsContent value="accepted" className="space-y-4 mt-6">
-            {mockAcceptedMessages.length === 0 ? (
+            {acceptedMessages.length === 0 ? (
               <div className="text-center py-8 text-gray-500">
                 <CheckCircle className="h-12 w-12 mx-auto mb-4 opacity-50" />
                 <p>No accepted applications yet.</p>
               </div>
             ) : (
-              mockAcceptedMessages.map((message) => (
+              acceptedMessages.map((message) => (
                 <Card key={message.id} className="border-l-4 border-l-green-500">
                   <CardHeader>
                     <div className="flex items-start justify-between">
@@ -95,9 +129,16 @@ const MessagesModal = ({ open, onOpenChange, userId }: MessagesModalProps) => {
                         </CardTitle>
                         <p className="text-gray-600">{message.company}</p>
                       </div>
-                      <Badge variant="outline" className="text-green-700 border-green-700">
-                        Interview Scheduled
-                      </Badge>
+                      <div className="flex flex-col space-y-2">
+                        <Badge variant="outline" className="text-green-700 border-green-700">
+                          Interview Scheduled
+                        </Badge>
+                        {message.confirmed && (
+                          <Badge variant="default" className="bg-green-600">
+                            Confirmed
+                          </Badge>
+                        )}
+                      </div>
                     </div>
                   </CardHeader>
                   <CardContent className="space-y-4">
@@ -142,13 +183,13 @@ const MessagesModal = ({ open, onOpenChange, userId }: MessagesModalProps) => {
           </TabsContent>
 
           <TabsContent value="rejected" className="space-y-4 mt-6">
-            {mockRejectedMessages.length === 0 ? (
+            {rejectedMessages.length === 0 ? (
               <div className="text-center py-8 text-gray-500">
                 <XCircle className="h-12 w-12 mx-auto mb-4 opacity-50" />
                 <p>No rejected applications.</p>
               </div>
             ) : (
-              mockRejectedMessages.map((message) => (
+              rejectedMessages.map((message) => (
                 <Card key={message.id} className="border-l-4 border-l-red-500">
                   <CardHeader>
                     <div className="flex items-start justify-between">
