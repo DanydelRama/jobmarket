@@ -4,10 +4,15 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Eye, Users, LogOut, Globe, Briefcase, TrendingUp } from "lucide-react";
+import { Plus, Eye, Users, LogOut, Globe, Briefcase, TrendingUp, Settings } from "lucide-react";
+import CreateJobModal from "@/components/CreateJobModal";
+import ManageJobsModal from "@/components/ManageJobsModal";
 
 const RecruiterDashboard = () => {
   const [user, setUser] = useState<any>(null);
+  const [showCreateJob, setShowCreateJob] = useState(false);
+  const [showManageJobs, setShowManageJobs] = useState(false);
+  const [jobs, setJobs] = useState<any[]>([]);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -17,6 +22,10 @@ const RecruiterDashboard = () => {
     } else {
       window.location.href = '/';
     }
+
+    // Load jobs
+    const savedJobs = JSON.parse(localStorage.getItem('recruiterJobs') || '[]');
+    setJobs(savedJobs);
   }, []);
 
   const handleLogout = () => {
@@ -25,8 +34,8 @@ const RecruiterDashboard = () => {
   };
 
   const stats = [
-    { icon: Briefcase, label: "Active Jobs", value: "12", color: "text-blue-600" },
-    { icon: Users, label: "Total Applications", value: "247", color: "text-green-600" },
+    { icon: Briefcase, label: "Active Jobs", value: jobs.filter(job => job.status === 'Open').length.toString(), color: "text-blue-600" },
+    { icon: Users, label: "Total Applications", value: jobs.reduce((sum, job) => sum + (job.applicants || 0), 0).toString(), color: "text-green-600" },
     { icon: Eye, label: "Profile Views", value: "1,450", color: "text-purple-600" },
     { icon: TrendingUp, label: "Hire Rate", value: "18%", color: "text-orange-600" }
   ];
@@ -96,7 +105,7 @@ const RecruiterDashboard = () => {
 
         {/* Action Cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          <Card className="hover:shadow-soft transition-all duration-200 cursor-pointer group">
+          <Card className="hover:shadow-soft transition-all duration-200 cursor-pointer group" onClick={() => setShowCreateJob(true)}>
             <CardHeader className="text-center pb-4">
               <div className="bg-gradient-to-r from-primary to-accent p-4 rounded-2xl w-16 h-16 mx-auto mb-4 group-hover:scale-110 transition-transform duration-200">
                 <Plus className="h-8 w-8 text-white" />
@@ -113,19 +122,19 @@ const RecruiterDashboard = () => {
             </CardContent>
           </Card>
 
-          <Card className="hover:shadow-soft transition-all duration-200 cursor-pointer group">
+          <Card className="hover:shadow-soft transition-all duration-200 cursor-pointer group" onClick={() => setShowManageJobs(true)}>
             <CardHeader className="text-center pb-4">
               <div className="bg-gradient-to-r from-green-500 to-emerald-500 p-4 rounded-2xl w-16 h-16 mx-auto mb-4 group-hover:scale-110 transition-transform duration-200">
-                <Briefcase className="h-8 w-8 text-white" />
+                <Settings className="h-8 w-8 text-white" />
               </div>
-              <CardTitle className="text-xl">View My Jobs</CardTitle>
+              <CardTitle className="text-xl">Manage My Jobs</CardTitle>
             </CardHeader>
             <CardContent className="text-center">
               <p className="text-gray-600 mb-4">
                 Manage your existing job postings, edit details, and track their performance.
               </p>
               <Button variant="outline" className="hover:shadow-soft transform hover:scale-105 transition-all duration-200">
-                Manage Jobs
+                Manage Jobs ({jobs.length})
               </Button>
             </CardContent>
           </Card>
@@ -155,32 +164,39 @@ const RecruiterDashboard = () => {
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {[
-                { action: "New application received", job: "Senior Full Stack Developer", time: "2 hours ago", type: "application" },
-                { action: "Job posting published", job: "UX/UI Designer", time: "1 day ago", type: "job" },
-                { action: "Interview scheduled", job: "Digital Marketing Manager", time: "2 days ago", type: "interview" },
-                { action: "New application received", job: "Financial Analyst", time: "3 days ago", type: "application" }
-              ].map((activity, index) => (
+              {jobs.length > 0 ? jobs.slice(0, 4).map((job, index) => (
                 <div key={index} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
                   <div className="flex items-center space-x-3">
-                    <div className={`w-2 h-2 rounded-full ${
-                      activity.type === 'application' ? 'bg-blue-500' : 
-                      activity.type === 'job' ? 'bg-green-500' : 'bg-purple-500'
-                    }`}></div>
+                    <div className="w-2 h-2 rounded-full bg-blue-500"></div>
                     <div>
-                      <p className="font-medium text-gray-900">{activity.action}</p>
-                      <p className="text-sm text-gray-600">{activity.job}</p>
+                      <p className="font-medium text-gray-900">Job posted: {job.title}</p>
+                      <p className="text-sm text-gray-600">{job.companyName} • {job.location}</p>
                     </div>
                   </div>
                   <Badge variant="outline" className="text-xs">
-                    {activity.time}
+                    {new Date(job.createdAt).toLocaleDateString()}
                   </Badge>
                 </div>
-              ))}
+              )) : (
+                <div className="text-center py-8 text-gray-500">
+                  <p>No recent activity. Create your first job posting to get started!</p>
+                </div>
+              )}
             </div>
           </CardContent>
         </Card>
       </main>
+
+      {/* Modals */}
+      <CreateJobModal
+        open={showCreateJob}
+        onOpenChange={setShowCreateJob}
+      />
+
+      <ManageJobsModal
+        open={showManageJobs}
+        onOpenChange={setShowManageJobs}
+      />
     </div>
   );
 };

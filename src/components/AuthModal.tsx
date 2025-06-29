@@ -8,6 +8,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Card, CardContent } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { User, Building2 } from "lucide-react";
+import MultiStepSignUp from "./MultiStepSignUp";
 
 interface AuthModalProps {
   open: boolean;
@@ -18,31 +19,29 @@ interface AuthModalProps {
 const AuthModal = ({ open, onOpenChange, mode }: AuthModalProps) => {
   const [isSignUp, setIsSignUp] = useState(mode === 'signup');
   const [userType, setUserType] = useState<'jobseeker' | 'recruiter'>('jobseeker');
+  const [showMultiStep, setShowMultiStep] = useState(false);
   const [formData, setFormData] = useState({
     email: '',
-    password: '',
-    fullName: '',
-    company: ''
+    password: ''
   });
   const { toast } = useToast();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSignIn = (e: React.FormEvent) => {
     e.preventDefault();
     
     // Mock authentication - in real app this would connect to Supabase
     const userData = {
       id: Math.random().toString(36).substr(2, 9),
       email: formData.email,
-      fullName: formData.fullName,
+      fullName: 'John Doe', // Mock data
       userType,
-      company: formData.company
     };
     
     localStorage.setItem('user', JSON.stringify(userData));
     
     toast({
-      title: isSignUp ? "Account created successfully!" : "Welcome back!",
-      description: isSignUp ? "You can now start exploring opportunities." : "You have been signed in successfully.",
+      title: "Welcome back!",
+      description: "You have been signed in successfully.",
     });
     
     onOpenChange(false);
@@ -55,12 +54,31 @@ const AuthModal = ({ open, onOpenChange, mode }: AuthModalProps) => {
     }
   };
 
+  const handleSignUpStart = () => {
+    setShowMultiStep(true);
+  };
+
   const handleInputChange = (field: string, value: string) => {
     setFormData(prev => ({
       ...prev,
       [field]: value
     }));
   };
+
+  if (showMultiStep) {
+    return (
+      <MultiStepSignUp
+        open={open}
+        onOpenChange={(open) => {
+          if (!open) {
+            setShowMultiStep(false);
+          }
+          onOpenChange(open);
+        }}
+        userType={userType}
+      />
+    );
+  }
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -71,56 +89,39 @@ const AuthModal = ({ open, onOpenChange, mode }: AuthModalProps) => {
           </DialogTitle>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="space-y-6">
-          {isSignUp && (
-            <div className="space-y-4">
-              <Label className="text-base font-medium">I am a:</Label>
-              <RadioGroup 
-                value={userType} 
-                onValueChange={(value) => setUserType(value as 'jobseeker' | 'recruiter')}
-                className="grid grid-cols-2 gap-4"
-              >
-                <Card className={`cursor-pointer transition-all duration-200 ${userType === 'jobseeker' ? 'ring-2 ring-primary bg-primary/5' : 'hover:shadow-soft'}`}>
-                  <CardContent className="p-4 text-center">
-                    <RadioGroupItem value="jobseeker" id="jobseeker" className="sr-only" />
-                    <Label htmlFor="jobseeker" className="cursor-pointer">
-                      <User className="h-8 w-8 mx-auto mb-2 text-primary" />
-                      <div className="font-medium">Job Seeker</div>
-                      <div className="text-sm text-gray-600">Find opportunities</div>
-                    </Label>
-                  </CardContent>
-                </Card>
+        <form onSubmit={isSignUp ? (e) => { e.preventDefault(); handleSignUpStart(); } : handleSignIn} className="space-y-6">
+          <div className="space-y-4">
+            <Label className="text-base font-medium">I am a:</Label>
+            <RadioGroup 
+              value={userType} 
+              onValueChange={(value) => setUserType(value as 'jobseeker' | 'recruiter')}
+              className="grid grid-cols-2 gap-4"
+            >
+              <Card className={`cursor-pointer transition-all duration-200 ${userType === 'jobseeker' ? 'ring-2 ring-primary bg-primary/5' : 'hover:shadow-soft'}`}>
+                <CardContent className="p-4 text-center">
+                  <RadioGroupItem value="jobseeker" id="jobseeker" className="sr-only" />
+                  <Label htmlFor="jobseeker" className="cursor-pointer">
+                    <User className="h-8 w-8 mx-auto mb-2 text-primary" />
+                    <div className="font-medium">Job Seeker</div>
+                    <div className="text-sm text-gray-600">Find opportunities</div>
+                  </Label>
+                </CardContent>
+              </Card>
 
-                <Card className={`cursor-pointer transition-all duration-200 ${userType === 'recruiter' ? 'ring-2 ring-primary bg-primary/5' : 'hover:shadow-soft'}`}>
-                  <CardContent className="p-4 text-center">
-                    <RadioGroupItem value="recruiter" id="recruiter" className="sr-only" />
-                    <Label htmlFor="recruiter" className="cursor-pointer">
-                      <Building2 className="h-8 w-8 mx-auto mb-2 text-primary" />
-                      <div className="font-medium">Recruiter</div>
-                      <div className="text-sm text-gray-600">Find talent</div>
-                    </Label>
-                  </CardContent>
-                </Card>
-              </RadioGroup>
-            </div>
-          )}
+              <Card className={`cursor-pointer transition-all duration-200 ${userType === 'recruiter' ? 'ring-2 ring-primary bg-primary/5' : 'hover:shadow-soft'}`}>
+                <CardContent className="p-4 text-center">
+                  <RadioGroupItem value="recruiter" id="recruiter" className="sr-only" />
+                  <Label htmlFor="recruiter" className="cursor-pointer">
+                    <Building2 className="h-8 w-8 mx-auto mb-2 text-primary" />
+                    <div className="font-medium">Recruiter</div>
+                    <div className="text-sm text-gray-600">Find talent</div>
+                  </Label>
+                </CardContent>
+              </Card>
+            </RadioGroup>
+          </div>
 
           <div className="space-y-4">
-            {isSignUp && (
-              <div>
-                <Label htmlFor="fullName">Full Name</Label>
-                <Input
-                  id="fullName"
-                  type="text"
-                  placeholder="Enter your full name"
-                  value={formData.fullName}
-                  onChange={(e) => handleInputChange('fullName', e.target.value)}
-                  required
-                  className="mt-1"
-                />
-              </div>
-            )}
-
             <div>
               <Label htmlFor="email">Email</Label>
               <Input
@@ -146,21 +147,6 @@ const AuthModal = ({ open, onOpenChange, mode }: AuthModalProps) => {
                 className="mt-1"
               />
             </div>
-
-            {isSignUp && userType === 'recruiter' && (
-              <div>
-                <Label htmlFor="company">Company Name</Label>
-                <Input
-                  id="company"
-                  type="text"
-                  placeholder="Enter your company name"
-                  value={formData.company}
-                  onChange={(e) => handleInputChange('company', e.target.value)}
-                  required
-                  className="mt-1"
-                />
-              </div>
-            )}
           </div>
 
           <Button 
@@ -168,7 +154,7 @@ const AuthModal = ({ open, onOpenChange, mode }: AuthModalProps) => {
             className="w-full gradient-bg hover:shadow-glow transform hover:scale-[1.02] transition-all duration-200"
             size="lg"
           >
-            {isSignUp ? 'Create Account' : 'Sign In'}
+            {isSignUp ? 'Continue with Sign Up' : 'Sign In'}
           </Button>
 
           <div className="text-center">
